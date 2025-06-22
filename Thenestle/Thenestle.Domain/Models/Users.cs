@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Thenestle.Domain.Models
 {
     [Table("user", Schema = "couple_app")]
-    public class User
+    public class Users
     {
         [Column("user_id")]
         public int UserId { get; set; }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Thenestle.API.DTO.User;
 using Thenestle.API.DTO.Couples;
+using Thenestle.API.DTO.Invites;
 using Thenestle.Domain.Models;
 
 namespace Thenestle.API.Helper
@@ -18,16 +19,20 @@ namespace Thenestle.API.Helper
         /// </summary>
         public MappingProfiles()
         {
-            CreateMap<User, UserDTO>();
-            CreateMap<UserDTO, User>();
+            CreateMap<Users, UserDTO>();
+            CreateMap<UserDTO, Users>();
 
-            CreateMap<User, UpdateUserDTO>();
-            CreateMap<UpdateUserDTO, User>();
+            CreateMap<Users, UpdateUserDTO>();
+            CreateMap<UpdateUserDTO, Users>();
 
             CreateMap<Couple, CoupleDTO>();
             CreateMap<CoupleDTO, Couple>();
             CreateMap<Couple, CreateCoupleDTO>();
             CreateMap<CreateCoupleDTO, Couple>();
+
+            CreateMap<Invite, InviteDTO>();
+            CreateMap<Invite, AcceptInviteDTO>();
+            CreateMap<Invite, CreateInviteDTO>();
         }
 
         #endregion

@@ -26,6 +26,6 @@ namespace Thenestle.Domain.Models
         public int UserId { get; set; }
 
         // Навигационные свойства
-        public User User { get; set; }
+        public Users User { get; set; }
     }
 }

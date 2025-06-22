@@ -18,5 +18,9 @@ namespace Thenestle.Domain.Interfaces.Repositories
         Task<ICollection<Invite>> GetInvitesAsync(int pageNumber, int pageSize);
 
         Task<ICollection<Invite>> GetInvitesByCodeAsync(string code);
+
+        Task<ICollection<Invite>> GetInvitesByUserIdAsync(int userId);
+        Task<Invite?> GetInviteByCodeAsync(string code);
+
     }
 }

@@ -58,5 +58,19 @@ namespace Thenestle.Persistence.Repositories
                 .Where(i => i.Code == code)
                 .ToListAsync();
         }
+
+        public async Task<ICollection<Invite>> GetInvitesByUserIdAsync(int userId)
+        {
+            return await _context.Invites
+                .Where(i => i.InviterId == userId)
+                .Include(i => i.Couple)
+                .ToListAsync();
+        }
+
+        public async Task<Invite?> GetInviteByCodeAsync(string code)
+        {
+            return await _context.Invites
+                .FirstOrDefaultAsync(i => i.Code == code && !i.IsUsed && i.ExpiresAt > DateTime.UtcNow);
+        }
     }
 }

@@ -27,6 +27,6 @@ namespace Thenestle.Domain.Models
 
         // Навигационные свойства
         public Mood Mood { get; set; }
-        public User User { get; set; }
+        public Users User { get; set; }
     }
 }

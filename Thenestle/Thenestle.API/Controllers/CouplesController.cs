@@ -7,16 +7,17 @@ using Thenestle.API.DTO.User;
 using Thenestle.Persistence.Repositories;
 using Thenestle.API.DTO.Couples;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Thenestle.API.Controllers
 {
     /// <summary>
     /// Контроллер для управления парами пользователей.
     /// </summary>
-    [Route("api/v{version:apiVersion}/couples")]
+    [ApiController]
     [ApiVersion("1.0")]
     [ApiVersion("99.0")]
-    [ApiController]
+    [Route("api/v{version:apiVersion}/couples")]
     [Authorize]
     public class CouplesController : ControllerBase
     {
@@ -101,14 +102,17 @@ namespace Thenestle.API.Controllers
             try
             {
                 var (couples, totalCount) = await _coupleRepository.GetCouplesAsync(
-                    pageNumber, pageSize, sortField, ascending);
+                        pageNumber, pageSize, sortField, ascending);
 
                 if (couples == null || !couples.Any())
                     return NotFound("пары не найдены");
 
-                var coupleDtos = _mapper.Map<List<CoupleDTO>>(couples);
-
-                return Ok(new PagedResponse<CoupleDTO>(coupleDtos, pageNumber, pageSize, totalCount));
+                return Ok(new PagedResponse<CoupleDTO>(
+                    _mapper.Map<List<CoupleDTO>>(couples ?? new List<Couple>()),
+                    pageNumber,
+                    pageSize,
+                    totalCount
+                ));
             }
             catch (Exception ex)
             {
@@ -172,6 +176,7 @@ namespace Thenestle.API.Controllers
         /// Создание пары администратором.
         /// </summary>
         [HttpPost("createByAdmin")]
+        [MapToApiVersion("1.0")]
         [MapToApiVersion("99.0")]
         public async Task<ActionResult<CreateCoupleDTO>> CreateCoupleByAdmin(int user1Id, int user2Id)
         {
@@ -189,7 +194,7 @@ namespace Thenestle.API.Controllers
                 {
                     User1Id = user1Id,
                     User2Id = user2Id,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
                 };
 
                 await _coupleRepository.AddCoupleAsync(couple);
@@ -219,50 +224,100 @@ namespace Thenestle.API.Controllers
         /// </summary>
         [HttpPost("create")]
         [MapToApiVersion("1.0")]
-        public async Task<ActionResult<CreateCoupleDTO>> CreateCouple([FromQuery] int inviteId)
+        public async Task<ActionResult<CoupleDTO>> CreateCouple()
         {
             try
             {
-                var invite = await _inviteRepository.GetInviteByIdAsync(inviteId);
-                if (invite == null)
-                    return NotFound("Инвайт не найден");
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-                if (invite.IsUsed)
-                    return BadRequest("Инвайт уже использован");
+                // Check if user already has a couple
+                var existingCouple = await _coupleRepository.GetCoupleByUserIdAsync(userId);
+                if (existingCouple != null)
+                {
+                    return BadRequest("You already have a couple");
+                }
 
-                if (invite.ExpiresAt < DateTime.UtcNow)
-                    return BadRequest("Инвайт истёк");
-
-                // Создаём пару
+                // Create new couple with only the current user
                 var couple = new Couple
                 {
-                    User1Id = invite.InviterId,
-                    User2Id = invite.Couple.User2Id == invite.InviterId ? invite.Couple.User1Id : invite.Couple.User2Id,
+                    User1Id = userId,
+                    User2Id = 0, // Initially no second user
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await _coupleRepository.AddCoupleAsync(couple);
 
-                // Обновляем пользователей - связываем с новой парой
-                var user1 = await _userRepository.GetUserByIdAsync(couple.User1Id);
-                var user2 = await _userRepository.GetUserByIdAsync(couple.User2Id);
+                // Update user's couple reference
+                var user = await _userRepository.GetUserByIdAsync(userId);
+                user.CoupleId = couple.CoupleId;
+                await _userRepository.UpdateUserAsync(user);
 
-                user1.CoupleId = couple.CoupleId;
-                user2.CoupleId = couple.CoupleId;
-
-                await _userRepository.UpdateUserAsync(user1);
-                await _userRepository.UpdateUserAsync(user2);
-
-                // Помечаем инвайт использованным
-                invite.IsUsed = true;
-                invite.Status = "accepted";
-                await _inviteRepository.UpdateInviteAsync(invite);
-
-                return CreatedAtAction(nameof(GetCouple), new { id = couple.CoupleId }, _mapper.Map<CreateCoupleDTO>(couple));
+                return Ok(_mapper.Map<CoupleDTO>(couple));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при создании пары по инвайту");
+                _logger.LogError(ex, "Error creating couple");
+                return StatusCode(500, "Error creating couple");
+            }
+        }
+
+        [HttpPost("{coupleId}/complete")]
+        public async Task<ActionResult<CoupleDTO>> CompleteCouple(int coupleId, [FromBody] int secondUserId)
+        {
+            try
+            {
+                var couple = await _coupleRepository.GetCoupleByIdAsync(coupleId);
+                if (couple == null)
+                {
+                    return NotFound("Couple not found");
+                }
+
+                // Check if second user already has a couple
+                var secondUser = await _userRepository.GetUserByIdAsync(secondUserId);
+                if (secondUser.CoupleId != null)
+                {
+                    return BadRequest("This user already has a couple");
+                }
+
+                // Update couple with second user
+                couple.User2Id = secondUserId;
+                await _coupleRepository.UpdateCoupleAsync(couple);
+
+                // Update second user's couple reference
+                secondUser.CoupleId = couple.CoupleId;
+                await _userRepository.UpdateUserAsync(secondUser);
+
+                return Ok(_mapper.Map<CoupleDTO>(couple));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing couple");
+                return StatusCode(500, "Error completing couple");
+            }
+        }
+
+        [HttpGet("my")]
+        [ProducesResponseType(typeof(CoupleDTO), 200)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<CoupleDTO>> GetMyCouple()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                    return Unauthorized("Пользователь не аутентифицирован");
+
+                int userId = int.Parse(userIdClaim.Value);
+
+                var couple = await _coupleRepository.GetCoupleByUserIdAsync(userId);
+                if (couple == null)
+                    return NotFound("Пара не найдена");
+
+                return Ok(_mapper.Map<CoupleDTO>(couple));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении пары пользователя");
                 return StatusCode(500, "Произошла ошибка при обработке запроса");
             }
         }

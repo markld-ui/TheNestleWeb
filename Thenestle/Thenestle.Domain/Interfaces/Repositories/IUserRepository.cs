@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 namespace Thenestle.Domain.Interfaces.Repositories
 {
     /// <summary>
-    /// Интерфейс репозитория для работы с сущностью <see cref="User"/>
+    /// Интерфейс репозитория для работы с сущностью <see cref="Users"/>
     /// </summary>
     public interface IUserRepository
     {
         /// <summary>
         /// Получить пользователей с пагинацией и фильтрацией
         /// </summary>
-        Task<(ICollection<User> Users, int TotalCount)> GetUsersAsync(
+        Task<(ICollection<Users> Users, int TotalCount)> GetUsersAsync(
         int pageNumber = 1,
         int pageSize = 10,
         string sortField = "UserId",
@@ -21,12 +21,12 @@ namespace Thenestle.Domain.Interfaces.Repositories
         /// <summary>
         /// Получить пользователя по ID
         /// </summary>
-        Task<User?> GetUserByIdAsync(int id);
+        Task<Users?> GetUserByIdAsync(int id);
 
         /// <summary>
         /// Получить пользователя по email
         /// </summary>
-        Task<User?> GetUserByEmailAsync(string email);
+        Task<Users?> GetUserByEmailAsync(string email);
 
         /// <summary>
         /// Проверить существование пользователя по ID
@@ -41,17 +41,17 @@ namespace Thenestle.Domain.Interfaces.Repositories
         /// <summary>
         /// Добавить нового пользователя
         /// </summary>
-        Task AddUserAsync(User user);
+        Task AddUserAsync(Users user);
 
         /// <summary>
         /// Обновить пользователя
         /// </summary>
-        Task UpdateUserAsync(User user);
+        Task UpdateUserAsync(Users user);
 
         /// <summary>
         /// Удалить пользователя
         /// </summary>
-        Task DeleteUserAsync(User user);
+        Task DeleteUserAsync(Users user);
 
         /// <summary>
         /// Обновить рефреш-токен пользователя
@@ -67,6 +67,6 @@ namespace Thenestle.Domain.Interfaces.Repositories
         /// </summary>
         /// <param name="refreshToken"></param>
         /// <returns></returns>
-        Task<User?> GetUserByRefreshTokenAsync(string refreshToken);
+        Task<Users?> GetUserByRefreshTokenAsync(string refreshToken);
     }
 }

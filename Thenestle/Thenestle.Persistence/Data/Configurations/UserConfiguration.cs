@@ -4,9 +4,9 @@ using Thenestle.Domain.Models;
 
 namespace Thenestle.Persistence.Data.Configurations
 {
-    public class UserConfiguration : IEntityTypeConfiguration<User>
+    public class UserConfiguration : IEntityTypeConfiguration<Users>
     {
-        public void Configure(EntityTypeBuilder<User> builder)
+        public void Configure(EntityTypeBuilder<Users> builder)
         {
             builder.ToTable("user", "couple_app");
 

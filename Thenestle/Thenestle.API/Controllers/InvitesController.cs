@@ -2,6 +2,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Thenestle.API.DTO.Couples;
 using Thenestle.API.DTO.Invites;
 using Thenestle.Domain.Interfaces.Repositories;
 using Thenestle.Domain.Interfaces.Services;
@@ -9,24 +10,30 @@ using Thenestle.Domain.Models;
 
 namespace Thenestle.API.Controllers
 {
-    [Route("api/v{version:apiVersion}/invites")]
     [ApiController]
     [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/invites")]
     [Authorize]
     public class InvitesController : ControllerBase
     {
         private readonly IInviteRepository _inviteRepository;
+        private readonly ICoupleRepository _coupleRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<InvitesController> _logger;
         private readonly IGeneratorCode _generatorCode;
 
         public InvitesController(
             IInviteRepository inviteRepository,
+            ICoupleRepository coupleRepository,
+            IUserRepository userRepository,
             IMapper mapper,
             ILogger<InvitesController> logger,
             IGeneratorCode generatorCode)
         {
             _inviteRepository = inviteRepository;
+            _coupleRepository = coupleRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
             _logger = logger;
             _generatorCode = generatorCode;
@@ -50,48 +57,44 @@ namespace Thenestle.API.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<ActionResult<InviteDTO>> CreateInvite([FromBody] InviteDTO inviteDto)
+        [HttpPost("generate/{coupleId}")]
+        public async Task<ActionResult<InviteDTO>> GenerateInvite(int coupleId)
         {
             try
             {
-                // Получаем идентификатор текущего пользователя из токена
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (userIdClaim == null)
-                    return Unauthorized("Пользователь не аутентифицирован");
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var couple = await _coupleRepository.GetCoupleByIdAsync(coupleId);
 
-                int inviterId = int.Parse(userIdClaim.Value);
-
-                // Генерируем код (предполагается, что GenerateCodeAsync возвращает Task<string>)
-                string code = _generatorCode.GenerateCodeAsync();
-
-                // Проверяем и удаляем уже принятые инвайты с таким же кодом
-                var existingInvites = await _inviteRepository.GetInvitesByCodeAsync(code);
-                foreach (var existingInvite in existingInvites)
+                if (couple == null)
                 {
-                    if (existingInvite.Status == "accepted")
-                    {
-                        await _inviteRepository.DeleteInviteAsync(existingInvite);
-                    }
+                    return NotFound("Couple not found");
                 }
 
-                // Создаём новый инвайт
-                var invite = _mapper.Map<Invite>(inviteDto);
-                invite.InviterId = inviterId;
-                invite.Code = code;
-                invite.CreatedAt = DateTime.UtcNow;
-                invite.IsUsed = false;
-                invite.Status = "pending";
-                invite.ExpiresAt = DateTime.UtcNow.AddMinutes(4);
+                if (couple.User1Id != userId && couple.User2Id != userId)
+                {
+                    return Forbid("You don't have permission for this couple");
+                }
+
+                // Generate new invite
+                var invite = new Invite
+                {
+                    CoupleId = coupleId,
+                    InviterId = userId,
+                    Code = _generatorCode.GenerateCodeAsync(),
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7),
+                    IsUsed = false,
+                    Status = "active"
+                };
 
                 await _inviteRepository.AddInviteAsync(invite);
 
-                return CreatedAtAction(nameof(GetInvite), new { id = invite.InviteId }, _mapper.Map<InviteDTO>(invite));
+                return Ok(_mapper.Map<InviteDTO>(invite));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при создании инвайта");
-                return StatusCode(500, "Произошла ошибка при обработке запроса");
+                _logger.LogError(ex, "Error generating invite");
+                return StatusCode(500, "Error generating invite");
             }
         }
 
@@ -112,6 +115,78 @@ namespace Thenestle.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Ошибка при обновлении инвайта с ID {id}");
+                return StatusCode(500, "Произошла ошибка при обработке запроса");
+            }
+        }
+
+        [HttpPost("accept")]
+        public async Task<ActionResult<CoupleDTO>> AcceptInvite([FromBody] string code)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                // Check if user already has a couple
+                var existingCouple = await _coupleRepository.GetCoupleByUserIdAsync(userId);
+                if (existingCouple != null)
+                {
+                    return BadRequest("You already have a couple");
+                }
+
+                // Find active invite by code
+                var invite = await _inviteRepository.GetInviteByCodeAsync(code);
+                if (invite == null || invite.IsUsed || invite.ExpiresAt < DateTime.UtcNow)
+                {
+                    return BadRequest("Invalid or expired invite code");
+                }
+
+                // Get the couple
+                var couple = await _coupleRepository.GetCoupleByIdAsync(invite.CoupleId);
+                if (couple == null)
+                {
+                    return NotFound("Couple not found");
+                }
+
+                // Complete the couple by adding the second user
+                couple.User2Id = userId;
+                await _coupleRepository.UpdateCoupleAsync(couple);
+
+                // Update user's couple reference
+                var user = await _userRepository.GetUserByIdAsync(userId);
+                user.CoupleId = couple.CoupleId;
+                await _userRepository.UpdateUserAsync(user);
+
+                // Mark invite as used
+                invite.IsUsed = true;
+                invite.Status = "accepted";
+                await _inviteRepository.UpdateInviteAsync(invite);
+
+                return Ok(_mapper.Map<CoupleDTO>(couple));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error accepting invite");
+                return StatusCode(500, "Error accepting invite");
+            }
+        }
+
+        [HttpGet("my")]
+        public async Task<ActionResult<IEnumerable<InviteDTO>>> GetMyInvites()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                    return Unauthorized("Пользователь не аутентифицирован");
+
+                int userId = int.Parse(userIdClaim.Value);
+
+                var invites = await _inviteRepository.GetInvitesByUserIdAsync(userId);
+                return Ok(_mapper.Map<IEnumerable<InviteDTO>>(invites));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении списка инвайтов пользователя");
                 return StatusCode(500, "Произошла ошибка при обработке запроса");
             }
         }

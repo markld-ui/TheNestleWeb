@@ -32,7 +32,7 @@ namespace Thenestle.Domain.Models
         public int InitiatorId { get; set; }
 
         // Навигационные свойства
-        public User Initiator { get; set; }
+        public Users Initiator { get; set; }
         public CurrencyTransaction? Transaction { get; set; }
     }
 }

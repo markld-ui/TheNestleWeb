@@ -16,7 +16,7 @@ namespace Thenestle.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<(ICollection<User> Users, int TotalCount)> GetUsersAsync(
+        public async Task<(ICollection<Users> Users, int TotalCount)> GetUsersAsync(
             int pageNumber = 1,
             int pageSize = 10,
             string sortField = "UserId",
@@ -44,12 +44,12 @@ namespace Thenestle.Persistence.Repositories
             return (users, totalCount);
         }
 
-        public async Task<User?> GetUserByIdAsync(int id)
+        public async Task<Users?> GetUserByIdAsync(int id)
         {
             return await _context.Users.FindAsync(id);
         }
 
-        public async Task<User?> GetUserByEmailAsync(string email)
+        public async Task<Users?> GetUserByEmailAsync(string email)
         {
             return await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == email);
@@ -65,19 +65,19 @@ namespace Thenestle.Persistence.Repositories
             return await _context.Users.AnyAsync(u => u.Email == email);
         }
 
-        public async Task AddUserAsync(User user)
+        public async Task AddUserAsync(Users user)
         {
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateUserAsync(User user)
+        public async Task UpdateUserAsync(Users user)
         {
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteUserAsync(User user)
+        public async Task DeleteUserAsync(Users user)
         {
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
@@ -94,7 +94,7 @@ namespace Thenestle.Persistence.Repositories
             }
         }
 
-        public async Task<User?> GetUserByRefreshTokenAsync(string refreshToken)
+        public async Task<Users?> GetUserByRefreshTokenAsync(string refreshToken)
         {
             return await _context.Users
                 .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);

@@ -107,7 +107,7 @@ namespace Thenestle.API.Controllers
 
                 var refreshToken = _jwtService.GenerateRefreshToken();
 
-                var user = new User
+                var user = new Users
                 {
                     FirstName = model.FirstName,
                     LastName = model.LastName,

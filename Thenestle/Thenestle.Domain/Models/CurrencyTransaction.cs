@@ -29,7 +29,7 @@ namespace Thenestle.Domain.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Навигационные свойства
-        public User User { get; set; }
+        public Users User { get; set; }
         public FoodOrder? Order { get; set; }
     }
 }

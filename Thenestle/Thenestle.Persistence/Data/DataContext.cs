@@ -18,7 +18,7 @@ namespace Thenestle.Persistence.Data
 
         // Таблицы
         public DbSet<Mood> Moods { get; set; }
-        public DbSet<User> Users { get; set; }
+        public DbSet<Users> Users { get; set; }
         public DbSet<Couple> Couples { get; set; }
         public DbSet<Invite> Invites { get; set; }
         public DbSet<MoodEntry> MoodEntries { get; set; }

@@ -30,6 +30,6 @@ namespace Thenestle.Domain.Models
 
         // Навигационные свойства
         public Reminder Reminder { get; set; }
-        public User User { get; set; }
+        public Users User { get; set; }
     }
 }

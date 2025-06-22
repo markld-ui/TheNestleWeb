@@ -21,7 +21,7 @@ namespace Thenestle.Domain.Models
         /// <summary>
         /// Пользователь, связанный с ролью.
         /// </summary>
-        public User User { get; set; }
+        public Users User { get; set; }
 
         /// <summary>
         /// Идентификатор роли.

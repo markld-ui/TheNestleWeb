@@ -41,6 +41,6 @@ namespace Thenestle.Domain.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Навигационные свойства
-        public User AddedBy { get; set; }
+        public Users AddedBy { get; set; }
     }
 }

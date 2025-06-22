@@ -35,7 +35,7 @@ namespace Thenestle.Domain.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Навигационные свойства
-        public User CreatedBy { get; set; }
+        public Users CreatedBy { get; set; }
         public ICollection<ReminderNotification> Notifications { get; set; }
     }
 }

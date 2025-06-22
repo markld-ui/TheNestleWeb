@@ -58,5 +58,17 @@ namespace Thenestle.Persistence.Repositories
             _context.Couples.Remove(couple);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<Couple?> GetCoupleByUserIdAsync(int userId)
+        {
+            return await _context.Couples
+                .FirstOrDefaultAsync(c => c.User1Id == userId || c.User2Id == userId);
+        }
+
+        public async Task UpdateCoupleAsync(Couple couple)
+        {
+            _context.Couples.Update(couple);
+            await _context.SaveChangesAsync();
+        }
     }
 }

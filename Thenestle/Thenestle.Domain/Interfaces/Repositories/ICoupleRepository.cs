@@ -34,8 +34,15 @@ namespace Thenestle.Domain.Interfaces.Repositories
         Task AddCoupleAsync(Couple couple);
 
         /// <summary>
+        /// Обновляет пару
+        /// </summary>
+        Task UpdateCoupleAsync(Couple couple);
+
+        /// <summary>
         /// Удалить пару
         /// </summary>
         Task DeleteCoupleAsync(Couple couple);
+
+        Task<Couple?> GetCoupleByUserIdAsync(int userId);
     }
 }

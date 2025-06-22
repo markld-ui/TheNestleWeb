@@ -161,7 +161,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:5205", "https://localhost:5205")
+        policy.WithOrigins("http://localhost:5205", "https://localhost:5205", "http://localhost:5173")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -227,15 +227,21 @@ app.Use(async (context, next) =>
         logger.LogWarning("No Authorization header present");
     }
 
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:5205");
-        context.Response.Headers.Add("Access-Control-Allow-Headers", "Authorization, Content-Type");
-        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-        context.Response.StatusCode = 200;
-        await context.Response.CompleteAsync();
-        return;
-    }
+    //if (context.Request.Method == "OPTIONS")
+    //{
+    //    var origin = context.Request.Headers["Origin"].ToString();
+    //    if (origin == "http://localhost:5173" || origin == "http://localhost:5205")
+    //    {
+    //        context.Response.Headers.Add("Access-Control-Allow-Origin", origin);
+    //        context.Response.Headers.Add("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    //        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+    //        context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
+    //        context.Response.StatusCode = 200;
+    //        await context.Response.CompleteAsync();
+    //        return;
+    //    }
+    //}
+
 
     await next();
 });

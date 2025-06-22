@@ -36,6 +36,6 @@ namespace Thenestle.Domain.Models
 
         // Навигационные свойства
         public Couple Couple { get; set; }
-        public User Inviter { get; set; }
+        public Users Inviter { get; set; }
     }
 }

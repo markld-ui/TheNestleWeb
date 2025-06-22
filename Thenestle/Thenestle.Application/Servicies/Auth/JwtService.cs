@@ -45,7 +45,7 @@ namespace Thenestle.Application.Servicies.Auth
         /// </summary>
         /// <param name="user">Пользователь, для которого создается токен.</param>
         /// <returns>Строка, представляющая JWT-токен.</returns>
-        public string GenerateToken(User user)
+        public string GenerateToken(Users user)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"]);
