@@ -1,0 +1,3 @@
+dotnet ef migrations add InitialCreate --output-dir "Data/Migrations" --startup-project ../Thenestle.API
+
+dotnet ef database update --startup-project ../Thenestle.API 
