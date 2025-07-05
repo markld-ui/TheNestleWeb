@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getUsers } from '../../../api/users'
-import UserList from '../../../components/Users/UserList'
+import { getUsers } from '../../api/users';
+import UserList from './UserList';
 import { Box, Heading, Button, Flex, Spinner } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 

@@ -44,11 +44,16 @@ namespace Thenestle.Persistence.Data.Configurations
                 .HasConstraintName("fk_couple_user2")
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasCheckConstraint("ck_couple_users", "user1_id < user2_id");
+            
+            builder.HasCheckConstraint("ck_couple_users", "user2_id = 0 OR user1_id != user2_id");
 
             builder.HasIndex(c => new { c.User1Id, c.User2Id })
                 .IsUnique()
-                .HasDatabaseName("idx_couple_users_unique");
+                .HasDatabaseName("idx_couple_users_unique")
+                .HasFilter("user2_id != 0"); // Уникальность только для полных пар
+
+            builder.HasIndex(c => c.User1Id);
+            builder.HasIndex(c => c.User2Id);
         }
     }
 }

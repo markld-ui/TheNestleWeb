@@ -24,7 +24,7 @@ namespace Thenestle.Domain.Models
 
         // Навигационные свойства
         public Users User1 { get; set; }
-        public Users User2 { get; set; }
+        public Users? User2 { get; set; }
         public ICollection<Invite> Invites { get; set; }
     }
 }

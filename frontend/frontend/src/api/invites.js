@@ -1,11 +1,28 @@
 import api from './index'
 
+// export const getInvites = async (pageNumber = 1, pageSize = 10) => {
+//   const response = await api.get('/invites', {
+//     params: { pageNumber, pageSize },
+//   })
+//   return response.data
+// }
+
 export const getInvites = async (pageNumber = 1, pageSize = 10) => {
-  const response = await api.get('/invites', {
-    params: { pageNumber, pageSize },
-  })
-  return response.data
-}
+  try
+  {
+    const response = await fetch(`http://localhost:5205/api/v1/invites?pageNumber=${page}&pageSize=${pageSize}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return await response.json();
+  }
+  catch (error)
+  {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
+};
 
 export const getInvite = async (id) => {
   const response = await api.get(`/invites/${id}`)

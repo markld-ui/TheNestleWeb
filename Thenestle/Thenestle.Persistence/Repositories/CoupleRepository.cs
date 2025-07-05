@@ -62,6 +62,9 @@ namespace Thenestle.Persistence.Repositories
         public async Task<Couple?> GetCoupleByUserIdAsync(int userId)
         {
             return await _context.Couples
+                .Include(c => c.User1) // Подгружаем данные первого пользователя
+                .Include(c => c.User2) // Подгружаем данные второго пользователя
+                .AsNoTracking() // Для read-only операций повышаем производительность
                 .FirstOrDefaultAsync(c => c.User1Id == userId || c.User2Id == userId);
         }
 

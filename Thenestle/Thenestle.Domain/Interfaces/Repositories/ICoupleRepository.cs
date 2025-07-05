@@ -43,6 +43,9 @@ namespace Thenestle.Domain.Interfaces.Repositories
         /// </summary>
         Task DeleteCoupleAsync(Couple couple);
 
+        /// <summary>
+        /// Получить пару по ID пользователя (с базовой информацией)
+        /// </summary>
         Task<Couple?> GetCoupleByUserIdAsync(int userId);
     }
 }

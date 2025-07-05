@@ -8,6 +8,7 @@ using Thenestle.Persistence.Repositories;
 using Thenestle.API.DTO.Couples;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Thenestle.Domain.Interfaces.Services;
 
 namespace Thenestle.API.Controllers
 {
@@ -26,6 +27,7 @@ namespace Thenestle.API.Controllers
         private readonly IInviteRepository _inviteRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<UsersController> _logger;
+        private readonly IGeneratorCode _generatorCode;
 
         /// <summary>
         /// Инициализирует новый экземпляр класса <see cref="CouplesController"/>.
@@ -40,13 +42,15 @@ namespace Thenestle.API.Controllers
             IUserRepository userRepository,
             IInviteRepository inviteRepository,
             IMapper mapper,
-            ILogger<UsersController> logger)
+            ILogger<UsersController> logger,
+            IGeneratorCode generatorCode)
         {
             _coupleRepository = coupleRepository;
             _userRepository = userRepository;
             _inviteRepository = inviteRepository;
             _mapper = mapper;
             _logger = logger;
+            _generatorCode = generatorCode;
         }
 
         /// <summary>
@@ -230,34 +234,49 @@ namespace Thenestle.API.Controllers
             {
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-                // Check if user already has a couple
+                // Проверка, есть ли у пользователя уже пара
                 var existingCouple = await _coupleRepository.GetCoupleByUserIdAsync(userId);
                 if (existingCouple != null)
                 {
-                    return BadRequest("You already have a couple");
+                    return BadRequest("Вы уже состоите в паре");
                 }
 
-                // Create new couple with only the current user
+                // Создание новой пары
                 var couple = new Couple
                 {
                     User1Id = userId,
-                    User2Id = 0, // Initially no second user
+                    User2Id = 0, // Устанавливаем 0 для "неполной" пары
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await _coupleRepository.AddCoupleAsync(couple);
 
-                // Update user's couple reference
+                // Генерация кода приглашения
+                var inviteCode = _generatorCode.GenerateCodeAsync();
+                var invite = new Invite
+                {
+                    Code = inviteCode,
+                    CoupleId = couple.CoupleId,
+                    InviterId = userId,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7), // Код действителен 7 дней
+                    Status = "pending"
+                };
+
+                await _inviteRepository.AddInviteAsync(invite);
+
+                // Обновление ссылки на пару у пользователя
                 var user = await _userRepository.GetUserByIdAsync(userId);
                 user.CoupleId = couple.CoupleId;
                 await _userRepository.UpdateUserAsync(user);
 
-                return Ok(_mapper.Map<CoupleDTO>(couple));
+                var coupleDto = _mapper.Map<CoupleDTO>(couple);
+                coupleDto.InviteCode = inviteCode; // Возвращаем код в ответе
+                return Ok(coupleDto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating couple");
-                return StatusCode(500, "Error creating couple");
+                _logger.LogError(ex, "Ошибка при создании пары");
+                return StatusCode(500, "Ошибка при создании пары");
             }
         }
 

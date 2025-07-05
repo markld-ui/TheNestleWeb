@@ -24,6 +24,7 @@ namespace Thenestle.API.Helper
 
             CreateMap<Users, UpdateUserDTO>();
             CreateMap<UpdateUserDTO, Users>();
+            CreateMap<UserShortDTO, Users>();
 
             CreateMap<Couple, CoupleDTO>();
             CreateMap<CoupleDTO, Couple>();

@@ -1,11 +1,18 @@
 import api from './index'
 
-export const getUsers = async (pageNumber = 1, pageSize = 10, sortField = 'UserId', ascending = true) => {
-  const response = await api.get('/users', {
-    params: { pageNumber, pageSize, sortField, ascending },
-  })
-  return response.data
-}
+export const getUsers = async (page = 1, pageSize = 10) => {
+  try {
+    const response = await fetch(`http://localhost:5205/api/v1/users?pageNumber=${page}&pageSize=${pageSize}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
+};
 
 export const getUser = async (id) => {
   const response = await api.get(`/users/${id}`)

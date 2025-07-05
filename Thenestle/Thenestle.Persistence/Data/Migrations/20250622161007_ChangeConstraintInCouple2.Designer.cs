@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Thenestle.Persistence.Data;
@@ -11,9 +12,11 @@ using Thenestle.Persistence.Data;
 namespace Thenestle.Persistence.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250622161007_ChangeConstraintInCouple2")]
+    partial class ChangeConstraintInCouple2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -55,11 +58,11 @@ namespace Thenestle.Persistence.Data.Migrations
                     b.HasIndex("User1Id", "User2Id")
                         .IsUnique()
                         .HasDatabaseName("idx_couple_users_unique")
-                        .HasFilter("user2_id != 0");
+                        .HasFilter("user2_id IS NOT NULL");
 
                     b.ToTable("couple", "couple_app", t =>
                         {
-                            t.HasCheckConstraint("ck_couple_users", "user2_id = 0 OR user1_id != user2_id");
+                            t.HasCheckConstraint("ck_couple_users", "user2_id IS NULL OR user1_id != user2_id");
                         });
                 });
 

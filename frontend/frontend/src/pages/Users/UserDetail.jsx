@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { getUser } from '../../../api/users'
+import { getUser } from '../../api/users';
 import {
   Box,
   Heading,

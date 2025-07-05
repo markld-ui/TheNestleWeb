@@ -1,10 +1,20 @@
 import api from './index';
 
-export const getCouples = async (pageNumber = 1, pageSize = 10, sortField = "CoupleId", ascending = true) => {
-  const response = await api.get("/couples", {
-    params: { pageNumber, pageSize, sortField, ascending },
-  });
-  return response.data;
+export const getCouples = async (page = 1, pageSize = 10) => {
+  try
+  {
+    const response = await fetch(`http://localhost:5205/api/v1/couples?pageNumber=${page}&pageSize=${pageSize}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return await response.json();
+  }
+  catch (error)
+  {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
 };
 
 export const getCouple = async (id) => {
